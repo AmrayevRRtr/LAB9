@@ -1,3 +1,4 @@
+
 import pygame
 import random
 pygame.init()
@@ -76,17 +77,23 @@ wintextRect.center = (W // 2, H // 2)
 
 # Menu buttons
 menu_font = pygame.font.SysFont('comicsansms', 60)
-menu_options = ['Resume', 'Exit']
-menu_texts = [menu_font.render(option, True, white) for option in menu_options]
+menu_options = ['Resume', 'Info', 'Exit']
+menu_texts = [menu_font.render(i, True, white) for i in menu_options]
 menu_rects = [text.get_rect(center=(W // 2, H // 2 + i * 100)) for i, text in enumerate(menu_texts)]
 
+info_font = pygame.font.SysFont('comicsansms', 40)
+info_options = ['Press left and right arrows to control paddle', 'Back']
+info_texts = [info_font.render(i, True, white) for i in info_options]
+info_rects = [t.get_rect(center=(W // 2, H // 2 + i*100)) for i, t in enumerate(info_texts)]
 
 
 # Game state
 running = True
 paused = True
 menu_active = True
+info_active = False
 move_left = move_right = False
+
 
 while running:
     key = pygame.key.get_pressed()
@@ -102,7 +109,20 @@ while running:
                         paused = False
                         menu_active = False
                     elif index == 1:
+                        info_active = True
+                        menu_active = False
+                    elif index == 2:
                         running = False
+        elif info_active and event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                mouse_pos = pygame.mouse.get_pos()
+                for index, rect in enumerate(info_rects):
+                    if rect.collidepoint(mouse_pos):
+                        if index == 0:  
+                            pass
+                        elif index == 1:  # Back
+                            info_active = False
+                            menu_active = True
+                            
 
         elif event.type == pygame.KEYDOWN:
             if event.key == pygame.K_LEFT:
@@ -127,12 +147,17 @@ while running:
         paddle.right += paddleSpeed
         paddlepos1 += paddleSpeed
         
-        
 
+ 
     if paused:
         screen.fill(bg)
-        for index, text in enumerate(menu_texts):
-            screen.blit(text, menu_rects[index])
+        if menu_active:
+            for index, text in enumerate(menu_texts):
+                screen.blit(text, menu_rects[index])
+
+        elif info_active:
+            for index, text in enumerate(info_texts):
+                screen.blit(text, info_rects[index])
         pygame.display.flip()
         continue
 
@@ -150,6 +175,7 @@ while running:
     # Collision with walls and paddle
     if ball.centerx < ballRadius or ball.centerx > W - ballRadius:
         dx = -dx
+        
     if ball.centery < ballRadius + 50:
         dy = -dy
     if ball.colliderect(paddle) and dy > 0:
