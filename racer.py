@@ -26,6 +26,10 @@ WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 RED = (255, 0, 0)
 
+# Game variables
+speed = 5
+coin_score = 0
+
 
 # Setting up Fonts
 font = pygame.font.SysFont("Verdana", 60)
@@ -45,12 +49,9 @@ DISPLAYSURF.fill(WHITE)
 pygame.display.set_caption("Game")
 
 # User-defined events
-INC_SPEED = pygame.USEREVENT + 1
-SPAWN_ENEMY = pygame.USEREVENT
-SPAWN_LUCKY = pygame.USEREVENT + 2
-pygame.time.set_timer(SPAWN_LUCKY, 3000)
+INC_SPEED = pygame.USEREVENT + 3
 pygame.time.set_timer(INC_SPEED, 2000)  # Increase speed event by time
-pygame.time.set_timer(SPAWN_ENEMY, 5000)  # Spawn enemy event every 5 seconds
+
 
 
 # Player class
@@ -85,7 +86,7 @@ class Enemy(pygame.sprite.Sprite):
         self.rect.center = (random.randint(40, SCREEN_WIDTH - 40), 0)
 
     def move(self):
-        self.rect.move_ip(0, 5)
+        self.rect.move_ip(0, speed)
         global score
         if self.rect.top > SCREEN_HEIGHT//1.5:
             score += 1
@@ -129,6 +130,7 @@ enemy = Enemy()
 
 enemies = pygame.sprite.Group()
 enemies.add(enemy)
+
 coins = pygame.sprite.Group()
 coins.add(coin)
 
@@ -137,21 +139,27 @@ lucky_coins.add(lucky_coin)
 all_sprites = pygame.sprite.Group()
 all_sprites.add(player)
 all_sprites.add(enemy)
-all_sprites.add(coin, lucky_coin)
+all_sprites.add(coin)
+all_sprites.add(lucky_coin)
 
 
-# Game variables
-speed = 5
-coin_score = 0
 
-SPAWN_COIN = pygame.USEREVENT + 2
-pygame.time.set_timer(SPAWN_COIN, 5000)
 
+SPAWN_COIN = pygame.USEREVENT + 1
+pygame.time.set_timer(SPAWN_COIN, 3000)
+
+SPAWN_LUCKY = pygame.USEREVENT + 2
+pygame.time.set_timer(SPAWN_LUCKY, 6000)
 
 def spawn_coin():
     new_coin = Coin()
     coins.add(new_coin)
     all_sprites.add(new_coin)
+def spawn_lucky_coin():
+    new_lucky = Lucky_coin()
+    lucky_coins.add(new_lucky)
+    all_sprites.add(new_lucky)
+
 # Game loop
 while True:
     for event in pygame.event.get():
@@ -160,22 +168,21 @@ while True:
             sys.exit()
         elif event.type == SPAWN_COIN:
             spawn_coin()
-        elif event.type == INC_SPEED:
-            speed += 0.5  # Increase speed
-        elif event.type == SPAWN_ENEMY:
-            enemy = Enemy()
-            enemies.add(enemy)
-            all_sprites.add(enemy)
+        # elif event.type == INC_SPEED:
+        #     speed += 0.5  # Increase speed
         elif event.type == SPAWN_LUCKY:
-            new = Lucky_coin()
-            lucky_coins.add(new)
-            all_sprites.add(new)
+            spawn_lucky_coin()
 
     DISPLAYSURF.blit(background, (0, 0))
     scores = font_small.render(str(score), True, BLACK)
     DISPLAYSURF.blit(scores, (10, 10))
     coin_scorre = font_small.render(f'Coin score: {str(coin_score)}', True, BLACK)
     DISPLAYSURF.blit(coin_scorre, (SCREEN_WIDTH//2.5, 10))
+    
+    if coin_score > 10:
+        acc = speed + 0.1
+        speed = min(acc, 10)
+
 
     for entity in all_sprites:
         DISPLAYSURF.blit(entity.image, entity.rect)
@@ -183,6 +190,7 @@ while True:
     
 
     if pygame.sprite.spritecollide(player, coins, True):
+
         pygame.mixer.Sound('catch.mp3').play()
         coin_score += 5
     if pygame.sprite.spritecollide(player, lucky_coins, True):
